@@ -180,6 +180,7 @@ def main():
         model = ConvNet().to(device)
         model.load_state_dict(torch.load(args.load_model))
 
+        # No augmentation when evaluating / testing
         test_dataset = datasets.MNIST('./data', train=False,
                     transform=transforms.Compose([
                         transforms.ToTensor(),
@@ -208,7 +209,7 @@ def main():
 #     subset_indices_train = range(len(train_dataset))
 #     subset_indices_valid = range(len(train_dataset))
 
-    # Train-Val Split (85/15%)
+    # Train-Val Split (85/15%) -- stratified across classes
     trainval_size = len(trainval_dataset)
     train_size, val_size = int(trainval_size*0.85), int(trainval_size*0.15)
     train_dataset, val_dataset = torch.utils.data.random_split(trainval_dataset,

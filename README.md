@@ -2,7 +2,9 @@
 
 **Data evaluation**
 
-Dataset: MNIST. The training set contains 60,000 images, each of them of dimensions 28x28 with 1 channel (Gray levels). We split this set into training (85%) and validation (15%). The test set contains 10,000 images.
+Dataset: MNIST. The training set contains 60,000 images, each of them of dimensions 28x28 with 1 channel (Gray levels). We split this set into training (85%) and validation (15%). The test set contains 10,000 images. The split is done via stratified sampling to respect the class distribution:
+
+<img src="./images/stratified_sampling.png?raw=true" width="60%" alt="stratified sampling respects class distribution">
 
 **Baseline model**
 A baseline ConvNet trained over 10 epochs achieves a validation accuracy of 97.32%.
