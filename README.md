@@ -58,8 +58,8 @@ Some kernels are easily identifiable in their function: top left detects dark di
 We observe that most example are well classified (the diagonal is dark blue and all other cells are white with mostly single digit misclassifications). Some mistakes to be noted: for instance 11 "4" digits were misclassified as "9" (4>9). We explore some of these misclassification by visual inspection (4>9, 9>4, 6>0, 3>5, 3>8, 2>7).
 
 <p float="center">
-    <img src="./images/E_misclass_1.png?raw=true" width="40%" alt="some mistakes"> 
-    <img src="./images/E_misclass_2.png?raw=true" width="40%" alt="more mistakes">
+    <img src="./images/E_misclass.png?raw=true" width="40%" alt="some mistakes"> 
+    <img src="./images/E_misclass_more.png?raw=true" width="40%" alt="more mistakes">
 </p>
 
 Looking at these mistakes, we understand than overly closed curves can cause misclassifications. Indeed, a 3 with closed curves is an 8, and a 4 with a closed top curve resembles a 9. A short limb can also be the root of misclassifications: a 6 with a short arm can pass for a 0, and a 2 with a short foot can be mistaken as a 7.
