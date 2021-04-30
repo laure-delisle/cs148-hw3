@@ -10,8 +10,12 @@ A baseline ConvNet trained over 10 epochs achieves a validation accuracy of 97.3
 **Data augmentations**
 Selected data augmentations are: slight rotations, translations, and shears.
 
-*From left to right: original, rotated, translated, sheared*
+*Rows from top to bottom: original, rotated, translated, sheared*
 
-Discarded annotations:
-- annotations like horitzontal flips, vertical flips and drastic rotaions would potentially change the class (a "5" flipped vertically becomes a "2", a "6" heavily rotated becomes a "9"),
+<img src="./images/augmentations.png?raw=true" width="60%" alt="augmented mnist images">
+
+Augmentations considered but not selected:
+- augmentations like horitzontal flips, vertical flips and drastic rotaions would potentially change the class (a "5" flipped vertically becomes a "2", a "6" heavily rotated becomes a "9"),
 - crops and blurs could denature the image enough to obfuscate it, effectively hurting the model's ability to classify. They also do not represent variations found in the dataset and seem to draw examples away from the true underlying distribution.
+
+[TODO: show results with those augmentations, performance is hurt]
