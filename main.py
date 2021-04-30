@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data.sampler import SubsetRandomSampler
@@ -95,6 +96,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
     trained for 1 epoch.
     '''
     model.train()   # Set the model to training mode
+    epoch_loss = 0
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()               # Clear the gradient
@@ -106,6 +108,12 @@ def train(args, model, device, train_loader, optimizer, epoch):
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.sampler),
                 100. * batch_idx / len(train_loader), loss.item()))
+        # keep track of epoch loss
+        epoch_loss += loss.item() * output.shape[0]
+
+    train_loss = epoch_loss/len(train_loader.sampler)
+    
+    return train_loss
 
 
 def test(model, device, loader, set_name):
@@ -124,9 +132,11 @@ def test(model, device, loader, set_name):
 
     test_loss /= test_num
 
-    print('\n{} set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+    print('\n{} set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
         set_name, test_loss, correct, test_num,
         100. * correct / test_num))
+    
+    return test_loss
 
 
 def main():
@@ -149,7 +159,7 @@ def main():
                         help='disables CUDA training')
     parser.add_argument('--seed', type=int, default=1, metavar='S',
                         help='random seed (default: 1)')
-    parser.add_argument('--log-interval', type=int, default=10, metavar='N',
+    parser.add_argument('--log-interval', type=int, default=80, metavar='N',
                         help='how many batches to wait before logging training status')
 
     parser.add_argument('--evaluate', action='store_true', default=False,
@@ -233,10 +243,24 @@ def main():
     scheduler = StepLR(optimizer, step_size=args.step, gamma=args.gamma)
 
     # Training loop
-    for epoch in range(1, args.epochs + 1):
-        train(args, model, device, train_loader, optimizer, epoch)
-        test(model, device, val_loader, "Validation")
+    epochs = range(1, args.epochs + 1)
+    train_losses = [0 for _ in epochs]
+    val_losses = [0 for _ in epochs]
+    for i, epoch in enumerate(epochs):
+        train_losses[i] = train(args, model, device, train_loader, optimizer, epoch)
+        val_losses[i] = test(model, device, val_loader, "Validation")
         scheduler.step()    # learning rate scheduler
+        
+    print(train_losses)
+    print(val_losses)
+    
+    plt.plot(epochs, train_losses)
+    plt.plot(epochs, val_losses)
+    plt.xticks(epochs)
+    plt.xlabel('epochs')
+    plt.ylabel('loss')
+    plt.legend(labels=['train loss', 'val loss'])
+    plt.show()
 
         # You may optionally save your model at each epoch here
 
