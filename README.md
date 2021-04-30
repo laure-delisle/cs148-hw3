@@ -49,6 +49,8 @@ For this part, we are working with the vanilla model slightly modified: the firs
 
 * Visualizing some kernels from the first layer:
 
+<img src="./images/E_kernels.png?raw=true" width="60%" alt="first layer kernels">
+
 Some kernels are easily identifiable in their function: top left detects dark diagonals, 3rd rows' 3rd and 4th kernels detect black top-left corners and white bottom-left corners respectively. The bottom right corner could potentially detect top-black to bottom-white transitions. In general, kernels of the first layers pick up on very trivial (!) features like lines, edges and corners. This appears to be confirmed here.
 
 * Confusion matrix and mistakes
