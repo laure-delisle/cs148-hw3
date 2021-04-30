@@ -40,5 +40,28 @@ Nothing was done here, however we augmented the capacity of the filter layer fro
 **Performance on the test set**
 With our model, the accuracy on the train and test sets are 94.69% and 97.62% respectively. When trained on fractions of the training data, the model performance decreases exponentially. We observe a linear trend on a log-log plot, indicating a fat-tail (or Pareto distribution) behavior. This indicates that adding training data is exponentially beneficial for our model. This however seems at odd with the data augmentation behavior explaiend earlier, any feedback here is welcome.
 
-<img src="./images/D_performance_fraction_data?raw=true" width="60%" alt="loss when training on fraction of data">
+<img src="./images/D_performance_fraction_data.png?raw=true" width="60%" alt="loss when training on fraction of data">
+
+From 1/16 to 1/1 of the data, the train accuracies are [87.57, 90.26, 92.26, 93.85, 94.69] and test accuracies are [92.65, 94.52, 96.0, 96.73, 97.62]. We're attributing the lower accuracies on the train set to dropout being used at training. Performance on the test set indicate a pretty decent capacity to generalize on the underlying data distribution.
+
+**Understanding the model's performance**
+For this part, we are working with the vanilla model slightly modified: the first layer is composed of 16 neurons. The test accuracy of this model is 97.90%, a slight boost from the vanilla model's performance.
+
+* Visualizing some kernels from the first layer:
+
+Some kernels are easily identifiable in their function: top left detects dark diagonals, 3rd rows' 3rd and 4th kernels detect black top-left corners and white bottom-left corners respectively. The bottom right corner could potentially detect top-black to bottom-white transitions. In general, kernels of the first layers pick up on very trivial (!) features like lines, edges and corners. This appears to be confirmed here.
+
+* Confusion matrix and mistakes
+
+<img src="./images/E_conf_matrix.png?raw=true" width="60%" alt="confusion matrix">
+
+We observe that most example are well classified (the diagonal is dark blue and all other cells are white with mostly single digit misclassifications). Some mistakes to be noted: for instance 11 "4" digits were misclassified as "9" (4>9). We explore some of these misclassification by visual inspection (4>9, 9>4, 6>0, 3>5, 3>8, 2>7).
+
+<p float="center">
+    <img src="./images/E_misclass_1.png?raw=true" width="40%" alt="some mistakes"> 
+    <img src="./images/E_misclass_2.png?raw=true" width="40%" alt="more mistakes">
+</p>
+
+Looking at these mistakes, we understand than overly closed curves can cause misclassifications. Indeed, a 3 with closed curves is an 8, and a 4 with a closed top curve resembles a 9. A short limb can also be the root of misclassifications: a 6 with a short arm can pass for a 0, and a 2 with a short foot can be mistaken as a 7.
+
 
