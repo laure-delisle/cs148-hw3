@@ -7,6 +7,7 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data.sampler import SubsetRandomSampler
+from torch.utils.data import random_split
 
 import os
 
@@ -107,13 +108,13 @@ def train(args, model, device, train_loader, optimizer, epoch):
                 100. * batch_idx / len(train_loader), loss.item()))
 
 
-def test(model, device, test_loader):
+def test(model, device, loader, set_name):
     model.eval()    # Set the model to inference mode
     test_loss = 0
     correct = 0
     test_num = 0
     with torch.no_grad():   # For the inference step, gradient is not computed
-        for data, target in test_loader:
+        for data, target in loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
             test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
@@ -123,8 +124,8 @@ def test(model, device, test_loader):
 
     test_loss /= test_num
 
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, test_num,
+    print('\n{} set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        set_name, test_loss, correct, test_num,
         100. * correct / test_num))
 
 
@@ -154,10 +155,12 @@ def main():
     parser.add_argument('--evaluate', action='store_true', default=False,
                         help='evaluate your model on the official test set')
     parser.add_argument('--load-model', type=str,
-                        help='model file path')
+                        help='model file name')
 
     parser.add_argument('--save-model', action='store_true', default=True,
                         help='For Saving the current Model')
+    parser.add_argument('--model-name', type=str, default='',
+                        help='string to attach to saved model filename')
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
 
@@ -169,13 +172,15 @@ def main():
 
     # Evaluate on the official test set
     if args.evaluate:
-        assert os.path.exists(args.load_model)
+        model_path = os.path.join('./models', args.load_model)
+        assert os.path.exists(model_path)
+        print('Loading model from {}'.format(model_path))
 
         # Set the test model
-        model = fcNet().to(device)
+        model = ConvNet().to(device)
         model.load_state_dict(torch.load(args.load_model))
 
-        test_dataset = datasets.MNIST('../data', train=False,
+        test_dataset = datasets.MNIST('./data', train=False,
                     transform=transforms.Compose([
                         transforms.ToTensor(),
                         transforms.Normalize((0.1307,), (0.3081,))
@@ -184,12 +189,13 @@ def main():
         test_loader = torch.utils.data.DataLoader(
             test_dataset, batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
-        test(model, device, test_loader)
+        test(model, device, test_loader, "Test")
+
 
         return
 
     # Pytorch has default MNIST dataloader which loads data at each iteration
-    train_dataset = datasets.MNIST('../data', train=True, download=True,
+    trainval_dataset = datasets.MNIST('./data', train=True, download=True,
                 transform=transforms.Compose([       # Data preprocessing
                     transforms.ToTensor(),           # Add data augmentation here
                     transforms.Normalize((0.1307,), (0.3081,))
@@ -199,17 +205,22 @@ def main():
     # training by using SubsetRandomSampler. Right now the train and validation
     # sets are built from the same indices - this is bad! Change it so that
     # the training and validation sets are disjoint and have the correct relative sizes.
-    subset_indices_train = range(len(train_dataset))
-    subset_indices_valid = range(len(train_dataset))
+#     subset_indices_train = range(len(train_dataset))
+#     subset_indices_valid = range(len(train_dataset))
 
+    # Train-Val Split (85/15%)
+    trainval_size = len(trainval_dataset)
+    train_size, val_size = int(trainval_size*0.85), int(trainval_size*0.15)
+    train_dataset, val_dataset = torch.utils.data.random_split(trainval_dataset,
+                                                       [train_size, val_size],
+                                                       generator=torch.Generator().manual_seed(args.seed))
+    
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size,
-        sampler=SubsetRandomSampler(subset_indices_train)
-    )
+        shuffle=True)
     val_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=args.test_batch_size,
-        sampler=SubsetRandomSampler(subset_indices_valid)
-    )
+        val_dataset, batch_size=args.test_batch_size,
+        shuffle=True)
 
     # Load your model [fcNet, ConvNet, Net]
     model = ConvNet().to(device)
@@ -223,13 +234,22 @@ def main():
     # Training loop
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
-        test(model, device, val_loader)
+        test(model, device, val_loader, "Validation")
         scheduler.step()    # learning rate scheduler
 
         # You may optionally save your model at each epoch here
 
     if args.save_model:
-        torch.save(model.state_dict(), "mnist_model.pt")
+        if args.model_name:
+            model_filename = "mnist_model_{}.pt".format(args.model_name)
+        else:
+            model_filename = "mnist_model.pt"
+        # Verify that the folder where to save models exists
+        if not os.path.isdir('./models'):
+            os.makedirs('./models')
+        model_path = os.path.join('./models', model_filename)
+        print('Saving model to {}'.format(model_path))
+        torch.save(model.state_dict(), model_path)
 
 
 if __name__ == '__main__':
