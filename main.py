@@ -97,6 +97,8 @@ def train(args, model, device, train_loader, optimizer, epoch):
     '''
     model.train()   # Set the model to training mode
     epoch_loss = 0
+    correct = 0
+    test_num = 0
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()               # Clear the gradient
@@ -104,6 +106,12 @@ def train(args, model, device, train_loader, optimizer, epoch):
         loss = F.nll_loss(output, target)   # Compute loss
         loss.backward()                     # Gradient computation
         optimizer.step()                    # Perform a single optimization step
+        
+        # compute accuracy
+        pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+        correct += pred.eq(target.view_as(pred)).sum().item()
+        test_num += len(data)
+        
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.sampler),
@@ -111,9 +119,11 @@ def train(args, model, device, train_loader, optimizer, epoch):
         # keep track of epoch loss
         epoch_loss += loss.item() * output.shape[0]
 
+    train_accuracy = 100. * correct / test_num
     train_loss = epoch_loss/len(train_loader.sampler)
+    print("epoch {}: training accuracy {:.2f}".format(epoch,train_accuracy))
     
-    return train_loss
+    return train_accuracy, train_loss
 
 
 def test(model, device, loader, set_name):
@@ -131,12 +141,13 @@ def test(model, device, loader, set_name):
             test_num += len(data)
 
     test_loss /= test_num
+    test_accuracy = 100. * correct / test_num
 
     print('\n{} set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
         set_name, test_loss, correct, test_num,
-        100. * correct / test_num))
+        test_accuracy))
     
-    return test_loss
+    return test_accuracy, test_loss
 
 
 def main():
@@ -244,22 +255,32 @@ def main():
 
     # Training loop
     epochs = range(1, args.epochs + 1)
-    train_losses = [0 for _ in epochs]
-    val_losses = [0 for _ in epochs]
+    train_losses, val_losses = [0 for _ in epochs], [0 for _ in epochs]
+    train_accuracies, val_accuracies = [0 for _ in epochs], [0 for _ in epochs]
     for i, epoch in enumerate(epochs):
-        train_losses[i] = train(args, model, device, train_loader, optimizer, epoch)
-        val_losses[i] = test(model, device, val_loader, "Validation")
+        train_accuracies[i], train_losses[i] = train(args, model, device, train_loader, optimizer, epoch)
+        val_accuracies[i], val_losses[i] = test(model, device, val_loader, "Validation")
         scheduler.step()    # learning rate scheduler
         
     print(train_losses)
     print(val_losses)
     
+    # plot losses
     plt.plot(epochs, train_losses)
     plt.plot(epochs, val_losses)
     plt.xticks(epochs)
     plt.xlabel('epochs')
     plt.ylabel('loss')
     plt.legend(labels=['train loss', 'val loss'])
+    plt.show()
+    
+    # plot accuracies
+    plt.plot(epochs, train_accuracies)
+    plt.plot(epochs, val_accuracies)
+    plt.xticks(epochs)
+    plt.xlabel('epochs')
+    plt.ylabel('accuracy')
+    plt.legend(labels=['train accuracy', 'val accuracy'])
     plt.show()
 
         # You may optionally save your model at each epoch here

@@ -9,7 +9,8 @@ Dataset: MNIST. The training set contains 60,000 images, each of them of dimensi
 **Baseline model**
 A baseline ConvNet trained over 10 epochs achieves a validation accuracy of 97.32%. It is interesting to note that our train loss is higher than the validation loss, probably due to regularization (dropout) used during training. For more in-depth explanations, this twitter thread by Aurélien Géron is great: https://twitter.com/aureliengeron/status/1110839223878184960.
 
-<img src="./images/losses_basic.png?raw=true" width="60%" alt="augmented mnist images">
+<img src="./images/losses_basic.png?raw=true" width="40%" alt="losses vanilla model"> 
+<img src="./images/accuracies_basic.png?raw=true" width="40%" alt="accuracies vanilla model">
 
 **Data augmentations**
 Selected data augmentations are: slight rotations, translations, and shears.
